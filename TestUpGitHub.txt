@@ -1,0 +1,53 @@
+import cv2
+import numpy as np
+from scipy import fftpack
+import matplotlib.pyplot as plt
+import sys
+
+
+def apply_fourier_transform(image_path):
+    # Đọc ảnh từ đường dẫn
+    img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+
+    # Thực hiện biến đổi Fourier
+    f_transform = np.fft.fft2(img)
+    f_transform_shifted = np.fft.fftshift(f_transform)
+
+    # Lọc trên miền tần số (ví dụ: lọc thông thấp)
+    rows, cols = img.shape 
+    crow, ccol = rows // 2, cols // 2
+    mask = np.ones((rows, cols), np.uint8)
+    r = 30  # Bán kính của vùng lọc
+    center = [crow, ccol]
+    x, y = np.ogrid[:rows, :cols]
+    mask_area = (x - center[0]) ** 2 + (y - center[1]) ** 2 <= r*r
+    mask[mask_area] = 0
+
+    # Áp dụng bộ lọc
+    f_transform_shifted_filtered = f_transform_shifted * mask
+
+    # Thực hiện biến đổi ngược Fourier
+    f_transform_filtered_back = np.fft.ifftshift(f_transform_shifted_filtered)
+    img_filtered = np.fft.ifft2(f_transform_filtered_back).real
+
+    # In kiểu dữ liệu của ảnh sau biến đổi Fourier
+    #print("Kiểu dữ liệu của ảnh sau biến đổi Fourier:", img_filtered.dtype)
+    sys.stdout.buffer.write(f"Kiểu dữ liệu của ảnh sau biến đổi Fourier: {img_filtered.dtype}\n".encode('utf-8'))
+
+    # In giá trị pixel
+    print("Min pixel value in filtered image:", np.min(img_filtered))
+    print("Max pixel value in filtered image:", np.max(img_filtered))
+
+    # Hiển thị ảnh gốc và ảnh kết quả
+    plt.subplot(121), plt.imshow(img, cmap='gray'), plt.title('Ảnh gốc')
+    plt.subplot(122), plt.imshow(img_filtered, cmap='gray'), plt.title('Ảnh kết quả')
+    plt.show()
+
+    # Lưu ảnh kết quả
+    cv2.imwrite('result_image.jpg', img_filtered)
+
+# Đường dẫn đến file ảnh
+image_path = 'C:\\Users\\chung\\Downloads\\SapaCongCafe.jpg'  # Thay đổi đường dẫn này
+
+# Áp dụng biến đổi Fourier và hiển thị/ lưu kết quả
+apply_fourier_transform(image_path)
